@@ -3,59 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js Simulated VR</title>
+<title>AR.js Double Canvas Post-processing</title>
 
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
 <style>
 html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
-
-#cameraFeed {
-  position: absolute;
-  top:0; left:0;
-  width:100%; height:100%;
-  object-fit:cover;
-  z-index:0;
-}
-
-.vr-container {
-  position: absolute; top:0; left:0;
-  width:100%; height:100%;
-  display:flex; justify-content:center; align-items:center;
-  z-index:1;
-  pointer-events:none;
-}
-
-.vr-eye {
-  width:52%;   /* slightly more than 50% for overlap */
-  height:100%;
-  overflow:hidden;
-  position:relative;
-}
-
-.vr-eye.left { transform: translateX(-2%); }
-.vr-eye.right { transform: translateX(2%); }
-
+.vr-container { display:flex; width:100%; height:100%; }
+.vr-eye { width:50%; height:100%; overflow:hidden; position:relative; }
+.vr-eye.left { transform: scaleX(-1); } /* mirror left eye */
 .vr-eye canvas { width:100%; height:100%; display:block; }
-
-/* Mirror left eye for headset alignment */
-.vr-eye.left a-scene { transform: scaleX(-1); }
+#hiddenCanvas { display:none; } /* AR rendered here first */
 </style>
 </head>
 <body>
 
-<!-- Camera feed -->
-<video id="cameraFeed" autoplay playsinline muted></video>
-
-<!-- Split-screen VR -->
-<div class="vr-container">
-  <div class="vr-eye left"></div>
-  <div class="vr-eye right"></div>
-</div>
-
-<!-- Single AR.js scene -->
-<a-scene embedded vr-mode-ui="enabled: false"
+<!-- Hidden AR scene -->
+<a-scene id="hiddenScene" embedded vr-mode-ui="enabled: false"
          arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
   <a-marker preset="hiro">
     <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="red">
@@ -65,11 +30,45 @@ html, body { margin:0; width:100%; height:100%; overflow:hidden; background:blac
   <a-entity camera></a-entity>
 </a-scene>
 
+<!-- Visible VR eye canvases -->
+<div class="vr-container">
+  <div class="vr-eye left">
+    <canvas id="leftEye"></canvas>
+  </div>
+  <div class="vr-eye right">
+    <canvas id="rightEye"></canvas>
+  </div>
+</div>
+
 <script>
-const video = document.getElementById('cameraFeed');
-navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' } })
-  .then(stream => { video.srcObject = stream; })
-  .catch(err => console.error('Camera error:', err));
+(async function() {
+  const leftCanvas = document.getElementById('leftEye');
+  const rightCanvas = document.getElementById('rightEye');
+
+  // Wait for hidden A-Frame scene to be ready
+  const scene = document.getElementById('hiddenScene');
+  await new Promise(resolve => scene.addEventListener('loaded', resolve));
+
+  // Get the hidden canvas used by A-Frame / AR.js
+  const hiddenCanvas = scene.renderer.domElement;
+
+  // Match visible canvases to hidden one
+  leftCanvas.width = rightCanvas.width = hiddenCanvas.width;
+  leftCanvas.height = rightCanvas.height = hiddenCanvas.height;
+
+  const leftCtx = leftCanvas.getContext('2d');
+  const rightCtx = rightCanvas.getContext('2d');
+
+  function render() {
+    // Post-process: draw hidden AR canvas to both eyes
+    leftCtx.drawImage(hiddenCanvas, 0, 0, leftCanvas.width, leftCanvas.height);
+    rightCtx.drawImage(hiddenCanvas, 0, 0, rightCanvas.width, rightCanvas.height);
+
+    requestAnimationFrame(render);
+  }
+
+  render();
+})();
 </script>
 </body>
 </html>
