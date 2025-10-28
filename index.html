@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mobile AR Battle HUD Enhanced</title>
+  <title>AR Battle HUD Stable</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
     html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
-    canvas { touch-action: none; }
   </style>
 </head>
 <body>
@@ -19,40 +18,27 @@
   <!-- Hiro marker with cube -->
   <a-marker preset="hiro">
     <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red">
-      <!-- Cube pulse when marker detected -->
       <a-animation attribute="scale" to="0.25 0.25 0.25" direction="alternate" dur="500" repeat="indefinite"></a-animation>
     </a-box>
   </a-marker>
 
   <!-- Camera with always-on HUD -->
   <a-entity camera>
-    <!-- Top info HUD -->
-    <a-text value="User: tester | Targeting System: ON" color="#00FF00" width="3" position="0 1.7 -2"></a-text>
+    <!-- Top info -->
+    <a-text value="User: tester | Targeting: ON" color="#00FF00" width="3" position="0 1.7 -2"></a-text>
 
     <!-- Center target box -->
     <a-plane width="0.5" height="0.5" color="transparent"
              material="shader: flat; wireframe: true; color:#00FF00"
-             position="0 1 -2">
-      <!-- Rotating rings around box -->
-      <a-ring radius-inner="0.28" radius-outer="0.3" color="#00FF00" theta-start="0" theta-length="360">
-        <a-animation attribute="rotation" to="0 0 360" dur="3000" repeat="indefinite"></a-animation>
-      </a-ring>
-      <a-ring radius-inner="0.32" radius-outer="0.34" color="#00FF00" theta-start="0" theta-length="360">
-        <a-animation attribute="rotation" to="0 0 -360" dur="4000" repeat="indefinite"></a-animation>
-      </a-ring>
-    </a-plane>
+             position="0 1 -2"></a-plane>
 
-    <!-- Scanning vertical line -->
+    <!-- Simple vertical scan line -->
     <a-plane width="0.02" height="0.5" color="#00FF00" position="0 1 -1.99">
       <a-animation attribute="position" to="0 1 -2.01" dur="1000" direction="alternate" repeat="indefinite"></a-animation>
     </a-plane>
-
-    <!-- Floating stats -->
-    <a-text value="Distance: 1.2m" color="#00FF00" width="2" position="0.6 0.8 -2"></a-text>
-    <a-text value="Marker ID: Hiro" color="#00FF00" width="2" position="-0.6 0.8 -2"></a-text>
   </a-entity>
 
-  <!-- Lighting for cube visibility -->
+  <!-- Lighting for cube -->
   <a-entity light="type: ambient; intensity: 0.5"></a-entity>
   <a-entity light="type: directional; intensity: 0.5" position="0 1 1"></a-entity>
 
