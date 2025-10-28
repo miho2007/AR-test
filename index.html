@@ -2,53 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Manual AR Start</title>
+  <title>AR Cube Stable</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
     html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
-    #start-btn {
-      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-      padding:20px 40px; font-size:20px; background:#00FF00; color:black; border:none; border-radius:8px; z-index:10;
-    }
   </style>
 </head>
 <body>
 
-<button id="start-btn">Start AR</button>
-
-<a-scene id="ar-scene" embedded
+<a-scene embedded
          vr-mode-ui="enabled: false"
          arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
   
+  <!-- Hiro marker with cube -->
   <a-marker preset="hiro">
     <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red"></a-box>
   </a-marker>
 
+  <!-- Camera -->
   <a-entity camera></a-entity>
 
+  <!-- Lighting for cube -->
   <a-entity light="type: ambient; intensity: 0.5"></a-entity>
   <a-entity light="type: directional; intensity: 0.5" position="0 1 1"></a-entity>
 
 </a-scene>
-
-<script>
-  const btn = document.getElementById('start-btn');
-  btn.addEventListener('click', async () => {
-    // Request camera permission manually
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      const scene = document.getElementById('ar-scene');
-      scene.style.display = 'block'; // show scene
-      const video = scene.querySelector('a-scene').querySelector('video');
-      if(video) video.srcObject = stream; // attach camera feed
-      btn.style.display = 'none';
-    } catch(e) {
-      alert('Camera permission denied.');
-      console.error(e);
-    }
-  });
-</script>
 
 </body>
 </html>
