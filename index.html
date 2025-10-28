@@ -2,51 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>VR AR Battle HUD</title>
+  <title>VR Split Screen Battle HUD</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
     html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
     #cameraFeed {
-      position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;
-      z-index:0;
+      position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0;
     }
+    .eye {
+      position:absolute; top:0; width:50%; height:100%; overflow:hidden; z-index:1;
+    }
+    #left-eye { left:0; }
+    #right-eye { right:0; }
   </style>
 </head>
 <body>
-  <!-- Manual camera feed -->
+  <!-- Camera feed -->
   <video id="cameraFeed" autoplay playsinline></video>
 
-  <a-scene embedded vr-mode-ui="enabled: true" arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true;">
-    
-    <!-- Marker with cube -->
-    <a-marker preset="hiro">
-      <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red"></a-box>
-    </a-marker>
-
-    <!-- Camera with battle HUD -->
-    <a-entity camera>
-      <!-- HUD panel always in front of user -->
-      <a-entity position="0 0 -1.5">
-        <a-plane width="2" height="1" color="#000000" opacity="0.4"></a-plane>
-
-        <!-- Top info text -->
-        <a-text value="User: tester    |    Targeting System: ON" color="#00FF00" width="3" position="-0.95 0.4 0"></a-text>
-
-        <!-- Center target box -->
+  <!-- Left eye scene -->
+  <div class="eye" id="left-eye">
+    <a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true;">
+      <a-marker preset="hiro">
+        <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red"></a-box>
+      </a-marker>
+      <!-- Camera with HUD -->
+      <a-entity camera>
+        <a-plane position="0 0 -1" width="2" height="1" color="#000000" opacity="0.4"></a-plane>
+        <a-text value="User: tester  |  Targeting: ON" color="#00FF00" width="3" position="-0.95 0.4 0"></a-text>
         <a-plane width="0.5" height="0.5" color="transparent" material="shader: flat; wireframe: true; color: #00FF00" position="0 -0.1 0"></a-plane>
-
-        <!-- Optional: scanning line -->
-        <a-plane width="0.02" height="0.5" color="#00FF00" position="0 -0.1 0.01">
-          <a-animation attribute="position" to="0 -0.1 -0.01" dur="1000" direction="alternate" repeat="indefinite"></a-animation>
-        </a-plane>
       </a-entity>
-    </a-entity>
+    </a-scene>
+  </div>
 
-  </a-scene>
+  <!-- Right eye scene -->
+  <div class="eye" id="right-eye">
+    <a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true;">
+      <a-marker preset="hiro">
+        <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red"></a-box>
+      </a-marker>
+      <!-- Camera with HUD -->
+      <a-entity camera>
+        <a-plane position="0 0 -1" width="2" height="1" color="#000000" opacity="0.4"></a-plane>
+        <a-text value="User: tester  |  Targeting: ON" color="#00FF00" width="3" position="-0.95 0.4 0"></a-text>
+        <a-plane width="0.5" height="0.5" color="transparent" material="shader: flat; wireframe: true; color: #00FF00" position="0 -0.1 0"></a-plane>
+      </a-entity>
+    </a-scene>
+  </div>
 
   <script>
-    // Manual camera feed
     const video = document.getElementById('cameraFeed');
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       .then(stream => { video.srcObject = stream; })
