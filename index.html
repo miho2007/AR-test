@@ -19,12 +19,12 @@
   </style>
 </head>
 <body>
-  <!-- Manual video feed (always stable) -->
+  <!-- Manual camera feed (always stable) -->
   <video id="cameraFeed" autoplay playsinline muted></video>
 
   <!-- AR.js scene for marker detection -->
   <a-scene embedded vr-mode-ui="enabled: false" 
-           arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: false;">
+           arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true;">
     
     <!-- Hiro marker + cube -->
     <a-marker preset="hiro">
@@ -36,12 +36,6 @@
     <a-entity camera></a-entity>
   </a-scene>
 
-  <button id="startBtn" style="
-      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-      padding:20px 40px; font-size:20px; background:#00FF00; color:black; border:none; border-radius:8px; z-index:10;">
-    Start AR
-  </button>
-
   <script>
     // Manual camera feed
     const video = document.getElementById('cameraFeed');
@@ -50,17 +44,6 @@
         video.srcObject = stream;
       })
       .catch(err => console.error('Camera error:', err));
-
-    // AR.js start button
-    const btn = document.getElementById('startBtn');
-    const scene = document.querySelector('a-scene');
-
-    btn.addEventListener('click', () => {
-      btn.style.display = 'none';
-      if (scene.components['arjs']) {
-        scene.components['arjs'].start(); // safe start after user gesture
-      }
-    });
   </script>
 </body>
 </html>
