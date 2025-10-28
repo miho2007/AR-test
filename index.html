@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AR.js + VR Passthrough Fix</title>
+  <title>Stable AR.js + VR Camera Feed</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/aframe/build/aframe-ar.js"></script>
   <style>
@@ -10,21 +10,24 @@
   </style>
 </head>
 <body>
+  <video id="cameraFeed" autoplay playsinline muted style="display:none"></video>
+
   <a-scene
     embedded
-    renderer="antialias: true; alpha: true"
-    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+    renderer="antialias: true; alpha: true;"
+    arjs="trackingMethod: best; sourceType: video; debugUIEnabled: false;"
     vr-mode-ui="enabled: true"
   >
-
-    <!-- Background plane that shows live camera texture -->
+    <!-- Background plane with our manual camera feed -->
     <a-assets>
-      <video id="camFeed" autoplay playsinline webkit-playsinline muted></video>
+      <video id="videoTexture" autoplay playsinline muted></video>
     </a-assets>
 
-    <a-entity id="bgPlane" geometry="primitive: plane; height: 2; width: 2"
-              position="0 0 -1"
-              material="shader: flat; src: #camFeed;"></a-entity>
+    <a-entity id="background"
+              geometry="primitive: plane; height: 2; width: 2"
+              material="shader: flat; src: #videoTexture"
+              position="0 0 -1">
+    </a-entity>
 
     <!-- AR marker -->
     <a-marker preset="hiro">
@@ -35,29 +38,40 @@
   </a-scene>
 
   <script>
-    // Force manual camera feed
-    const video = document.getElementById('camFeed');
+    const videoFeed = document.getElementById('cameraFeed');
+    const textureVideo = document.getElementById('videoTexture');
 
+    // 🧠 Step 1: Request the camera manually
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       .then(stream => {
-        video.srcObject = stream;
-        video.play();
-        console.log("✅ Camera stream active");
-
-        // Once ready, update the plane scale to fit view
-        video.addEventListener('loadedmetadata', () => {
-          const aspect = video.videoWidth / video.videoHeight;
-          const plane = document.getElementById('bgPlane');
-          plane.setAttribute('geometry', {
-            primitive: 'plane',
-            height: 2,
-            width: 2 * aspect
-          });
+        console.log("✅ Camera stream acquired");
+        videoFeed.srcObject = stream;
+        textureVideo.srcObject = stream;
+        return new Promise(res => {
+          textureVideo.onloadedmetadata = () => {
+            textureVideo.play();
+            res();
+          };
         });
       })
-      .catch(err => {
-        console.error("🚫 Camera access error:", err);
-      });
+      .then(() => {
+        // 🧩 Step 2: Replace AR.js internal source with our manual feed
+        const arSystem = document.querySelector('a-scene').systems['arjs'];
+        if (arSystem && arSystem.arToolkitSource) {
+          arSystem.arToolkitSource.domElement = videoFeed; // override
+          arSystem.arToolkitSource.ready = true;
+          console.log("🔁 Replaced AR.js video source with manual stream");
+        }
+
+        // Fit background plane aspect ratio
+        const aspect = textureVideo.videoWidth / textureVideo.videoHeight;
+        document.getElementById('background').setAttribute('geometry', {
+          primitive: 'plane',
+          height: 2,
+          width: 2 * aspect
+        });
+      })
+      .catch(err => console.error("🚫 Camera access error:", err));
   </script>
 </body>
 </html>
