@@ -1,45 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Stable AR.js Feed Chrome</title>
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-  <style>
-    html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
-    a-scene { width:100%; height:100%; position:absolute; top:0; left:0; }
-  </style>
-</head>
-<body>
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      // Create the scene dynamically after DOM is ready
-      const scene = document.createElement('a-scene');
-      scene.setAttribute('embedded', '');
-      scene.setAttribute('vr-mode-ui', 'enabled: false');
-      scene.setAttribute('arjs', 'trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true; smooth:true; smoothCount:10; minConfidence:0.5;');
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MindAR.js with Hiro Marker</title>
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+      a-scene { width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <a-scene mindar="imageTarget: #hiro-pattern; uiHint: false;">
+      <a-assets>
+        <a-asset-item id="hiro-pattern" src="hiro.patt"></a-asset-item>
+      </a-assets>
 
-      // Marker and cube
-      const marker = document.createElement('a-marker');
-      marker.setAttribute('preset', 'hiro');
+      <a-marker preset="hiro">
+        <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="red"></a-box>
+      </a-marker>
 
-      const box = document.createElement('a-box');
-      box.setAttribute('position', '0 0.6 0');
-      box.setAttribute('rotation', '0 45 0');
-      box.setAttribute('scale', '0.6 0.6 0.6');
-      box.setAttribute('color', 'red');
-
-      marker.appendChild(box);
-      scene.appendChild(marker);
-
-      // Camera
-      const camera = document.createElement('a-entity');
-      camera.setAttribute('camera', '');
-      scene.appendChild(camera);
-
-      // Append scene to body
-      document.body.appendChild(scene);
-    });
-  </script>
-</body>
+      <a-entity camera></a-entity>
+    </a-scene>
+  </body>
 </html>
