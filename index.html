@@ -2,20 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Stable Camera Feed AR.js</title>
+  <title>Stable AR.js Feed</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
-    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: black; }
-    a-scene { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display:none; }
+    html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
+    a-scene { width:100%; height:100%; position:absolute; top:0; left:0; display:none; }
     #startButton {
-      position: absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
       padding:20px 40px; font-size:20px; cursor:pointer; background:white; border-radius:10px;
     }
   </style>
 </head>
 <body>
-  <button id="startButton">Start Camera</button>
+  <button id="startButton">Start AR</button>
 
   <a-scene
     id="arScene"
@@ -35,11 +35,9 @@
     const scene = document.getElementById("arScene");
 
     btn.addEventListener("click", () => {
-      // Show the scene
+      // Show scene and start AR.js camera
       scene.style.display = "block";
-      // Start AR.js camera
       scene.components["arjs"].start();
-      // Hide button
       btn.style.display = "none";
     });
   </script>
