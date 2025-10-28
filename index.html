@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR.js Cardboard VR Split</title>
+  <title>AR.js Mirrored Full Screen</title>
 
+  <!-- A-Frame + AR.js -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
@@ -17,7 +18,7 @@
       background: black;
     }
 
-    /* Camera feed behind AR */
+    /* Full-screen mirrored camera feed */
     #cameraFeed {
       position: absolute;
       top: 0;
@@ -25,61 +26,26 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transform: scaleX(-1); /* mirror feed */
+      transform: scaleX(-1); /* mirror the feed */
       z-index: 0;
     }
 
-    /* VR split container */
-    .vr-container {
+    /* Full-screen mirrored AR scene */
+    a-scene {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      display: flex;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    .vr-view {
-      width: 50%;
-      height: 100%;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* Left eye mirrored */
-    .vr-view.left canvas {
-      transform: scaleX(-1);
-      transform-origin: center;
-    }
-
-    /* Right eye normal */
-    .vr-view.right canvas {
-      transform: none;
-    }
-
-    /* AR scene spans both halves */
-    a-scene {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 200%;
-      height: 100%;
       pointer-events: none;
       z-index: 1;
+      transform: scaleX(-1); /* mirror the AR scene to match feed */
     }
   </style>
 </head>
 <body>
-  <!-- Camera feed -->
+  <!-- Mirrored camera feed -->
   <video id="cameraFeed" autoplay playsinline muted></video>
-
-  <!-- VR split screen -->
-  <div class="vr-container">
-    <div class="vr-view left"></div>
-    <div class="vr-view right"></div>
-  </div>
 
   <!-- Single AR.js scene -->
   <a-scene embedded vr-mode-ui="enabled: false"
