@@ -1,110 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AR.js + Stable VR Split View</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>AR.js + VR Hybrid</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/aframe/build/aframe-ar.js"></script>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        background: black;
+      }
+      a-scene {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
 
-  <!-- A-Frame + AR.js -->
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+  <body>
+    <a-scene
+      vr-mode-ui="enabled: true"
+      renderer="antialias: true; alpha: true; precision: mediump;"
+      embedded
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+    >
+      <!-- Marker and object -->
+      <a-marker preset="hiro">
+        <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="blue"></a-box>
+      </a-marker>
 
-  <style>
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: black;
-    }
+      <!-- Camera -->
+      <a-entity camera></a-entity>
+    </a-scene>
 
-    #cameraFeed {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 0;
-    }
+    <script>
+      // Allow VR + AR together
+      const scene = document.querySelector('a-scene');
+      scene.addEventListener('loaded', () => {
+        const renderer = scene.renderer;
+        if (renderer.xr) {
+          renderer.xr.enabled = true;
+          console.log("✅ WebXR hybrid mode (AR + VR) is ready");
+        }
+      });
 
-    .vr-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      z-index: 1;
-    }
-
-    .vr-view {
-      width: 50%;
-      height: 100%;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .vr-view.left {
-      transform: scaleX(-1);
-    }
-
-    #ar-scene {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 200%; /* double width so each half can mirror it */
-      height: 100%;
-      transform-origin: left;
-      z-index: 2;
-      pointer-events: none;
-    }
-  </style>
-</head>
-
-<body>
-  <!-- Manual camera feed (always visible) -->
-  <video id="cameraFeed" autoplay playsinline muted></video>
-
-  <!-- VR container -->
-  <div class="vr-container">
-    <div class="vr-view left">
-      <!-- Left eye mirrors full AR scene -->
-      <div id="left-eye"></div>
-    </div>
-    <div class="vr-view right">
-      <div id="right-eye"></div>
-    </div>
-  </div>
-
-  <!-- Single AR scene (shared by both halves) -->
-  <a-scene id="ar-scene" embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
-    <a-marker preset="hiro">
-      <a-box position="0 0.5 0" rotation="0 45 0"
-             scale="0.5 0.5 0.5" color="red">
-        <a-animation attribute="rotation" to="0 405 0" dur="3000" repeat="indefinite"></a-animation>
-      </a-box>
-    </a-marker>
-    <a-entity camera></a-entity>
-  </a-scene>
-
-  <script>
-    // 1️⃣ Keep the camera feed stable
-    const video = document.getElementById('cameraFeed');
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => console.error('Camera error:', err));
-
-    // 2️⃣ Clone the AR view for both eyes
-    window.addEventListener('load', () => {
-      const arScene = document.getElementById('ar-scene');
-      const left = document.getElementById('left-eye');
-      const right = document.getElementById('right-eye');
-      left.appendChild(arScene.cloneNode(true));  // mirrored left view
-      right.appendChild(arScene);                 // main AR scene
-    });
-  </script>
-</body>
+      // Handle webcam permission / startup errors
+      window.addEventListener("error", e => {
+        console.error("🚨 Error:", e.message);
+      });
+    </script>
+  </body>
 </html>
