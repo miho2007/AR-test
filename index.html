@@ -1,137 +1,127 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>AR.js + VR Hybrid (Stable Feed)</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/aframe/build/aframe-ar.js"></script>
-    <style>
-      html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
-      #cameraFeed {
-        position:absolute;
-        top:0; left:0;
-        width:100%; height:100%;
-        object-fit:cover;
-        z-index:0;
-        background:black;
-      }
-      a-scene {
-        position:absolute;
-        top:0; left:0;
-        width:100%; height:100%;
-        z-index:1;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Manual webcam feed -->
-    <video id="cameraFeed" autoplay playsinline muted></video>
 <head>
-  <meta charset="UTF-8">
-  <title>AR + VR Passthrough (Stable Camera Feed)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual Video + AR.js Marker</title>
+  <title>AR.js + Manual VR Split View</title>
+
+  <!-- A-Frame + AR.js -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
   <style>
-    html, body { margin:0; height:100%; overflow:hidden; background:black; }
+    html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: black;
+    }
+
+    /* Base video feed always visible */
+    #cameraFeed {
+      position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;
+      z-index:0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    /* Split screen container */
+    .vr-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      z-index: 1;
+    }
+
+    .vr-view {
+      width: 50%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Mirror the left eye for symmetry */
+    .vr-view.left {
+      transform: scaleX(-1);
+    }
+
+    /* AR scene inside each half */
+    a-scene {
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      z-index:1; pointer-events:none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 200%;  /* double width since we show same view twice */
+      height: 100%;
+      pointer-events: none;
+    }
   </style>
 </head>
+
 <body>
-  <a-scene
-    vr-mode-ui="enabled: true"
-    embedded
-    renderer="antialias: true; alpha: true; precision: mediump;"
-    arjs="trackingMethod: best; sourceType: video; debugUIEnabled: false;"
-  >
-    <!-- Background that will show the video feed in VR -->
-    <a-assets>
-      <video id="cameraFeed" autoplay playsinline muted></video>
-    </a-assets>
+  <!-- Manual camera feed (always stable) -->
+  <!-- Manual stable camera feed -->
+  <video id="cameraFeed" autoplay playsinline muted></video>
 
-    <!-- AR.js Scene -->
-    <a-scene
-      vr-mode-ui="enabled: true"
-      embedded
-      renderer="antialias: true; alpha: true; precision: mediump;"
-      arjs="trackingMethod: best; sourceType: video; debugUIEnabled: false;"
-    >
-      <a-marker preset="hiro">
-        <a-box position="0 0.5 0" rotation="0 45 0" color="blue"></a-box>
-      </a-marker>
-    <!-- Video background plane -->
-    <a-entity id="video-plane"
-              geometry="primitive: plane; width: 4; height: 3"
-              material="shader: flat; src: #cameraFeed;"
-              position="0 0 -2">
-    </a-entity>
-
-      <a-entity camera></a-entity>
-    </a-scene>
-    <!-- Marker -->
+  <!-- AR.js scene for marker detection -->
+  <a-scene embedded vr-mode-ui="enabled: false" 
+           arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true;">
+    
+    <!-- Hiro marker + cube -->
     <a-marker preset="hiro">
-      <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="blue"></a-box>
+      <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="red">
+        <a-animation attribute="rotation" to="0 405 0" dur="3000" repeat="indefinite"></a-animation>
+      </a-box>
     </a-marker>
+  <!-- VR-style split-screen -->
+  <div class="vr-container">
+    <div class="vr-view left">
+      <a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+        <a-marker preset="hiro">
+          <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="red">
+            <a-animation attribute="rotation" to="0 405 0" dur="3000" repeat="indefinite"></a-animation>
+          </a-box>
+        </a-marker>
+        <a-entity camera></a-entity>
+      </a-scene>
+    </div>
 
-    <script>
-      const video = document.getElementById('cameraFeed');
-      let arSourceReady = false;
     <a-entity camera></a-entity>
   </a-scene>
+    <div class="vr-view right">
+      <!-- Right-eye mirror of same AR scene -->
+      <a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+        <a-marker preset="hiro">
+          <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="red">
+            <a-animation attribute="rotation" to="0 405 0" dur="3000" repeat="indefinite"></a-animation>
+          </a-box>
+        </a-marker>
+        <a-entity camera></a-entity>
+      </a-scene>
+    </div>
+  </div>
 
-      // Start webcam manually
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(stream => {
-          video.srcObject = stream;
-          video.play();
   <script>
+    // Manual camera feed
+    // Manual camera feed stays independent of AR.js
     const video = document.getElementById('cameraFeed');
-    const scene = document.querySelector('a-scene');
-
-          // Attach the feed to AR.js manually
-          const arScene = document.querySelector('a-scene');
-          arScene.addEventListener('loaded', () => {
-            const arSystem = arScene.systems["arjs"];
-            if (arSystem && arSystem.arToolkitSource) {
-              arSystem.arToolkitSource.domElement = video;
-              arSystem.arToolkitSource.ready = true;
-              console.log("✅ AR.js video source attached manually.");
-            }
-          });
-        })
-        .catch(err => console.error("Camera error:", err));
-    // Start camera manually (single permission request)
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       .then(stream => {
         video.srcObject = stream;
-        video.play();
-        console.log("🎥 Camera feed started.");
-
-      // Enable XR / VR after AR.js ready
-      const scene = document.querySelector('a-scene');
-      scene.addEventListener('loaded', () => {
-        if (scene.renderer && scene.renderer.xr) {
-          scene.renderer.xr.enabled = true;
-          console.log("✅ WebXR ready (AR + VR hybrid).");
-        }
-      });
-    </script>
-  </body>
-        // Wait for AR.js to initialize, then hook up video source
-        scene.addEventListener('loaded', () => {
-          const arSystem = scene.systems["arjs"];
-          if (arSystem && arSystem.arToolkitSource) {
-            arSystem.arToolkitSource.domElement = video;
-            arSystem.arToolkitSource.ready = true;
-            console.log("✅ ARToolkit video source set.");
-          }
-
-          // Enable VR rendering
-          if (scene.renderer && scene.renderer.xr) {
-            scene.renderer.xr.enabled = true;
-            console.log("✅ WebXR ready (VR passthrough).");
-          }
-        });
       })
-      .catch(err => console.error("Camera error:", err));
+      .catch(err => console.error('Camera error:', err));
   </script>
 </body>
 </html>
