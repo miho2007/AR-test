@@ -1,77 +1,137 @@
-<!DOCTYPE html>
+
 <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>AR.js + VR Hybrid (Stable Feed)</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/aframe/build/aframe-ar.js"></script>
+    <style>
+      html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
+      #cameraFeed {
+        position:absolute;
+        top:0; left:0;
+        width:100%; height:100%;
+        object-fit:cover;
+        z-index:0;
+        background:black;
+      }
+      a-scene {
+        position:absolute;
+        top:0; left:0;
+        width:100%; height:100%;
+        z-index:1;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Manual webcam feed -->
+    <video id="cameraFeed" autoplay playsinline muted></video>
 <head>
   <meta charset="UTF-8">
-  <title>Stable AR.js + VR Camera Feed</title>
+  <title>AR + VR Passthrough (Stable Camera Feed)</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/aframe/build/aframe-ar.js"></script>
   <style>
-    html, body { margin:0; padding:0; overflow:hidden; width:100%; height:100%; background:black; }
+    html, body { margin:0; height:100%; overflow:hidden; background:black; }
   </style>
 </head>
 <body>
-  <video id="cameraFeed" autoplay playsinline muted style="display:none"></video>
-
   <a-scene
-    embedded
-    renderer="antialias: true; alpha: true;"
-    arjs="trackingMethod: best; sourceType: video; debugUIEnabled: false;"
     vr-mode-ui="enabled: true"
+    embedded
+    renderer="antialias: true; alpha: true; precision: mediump;"
+    arjs="trackingMethod: best; sourceType: video; debugUIEnabled: false;"
   >
-    <!-- Background plane with our manual camera feed -->
+    <!-- Background that will show the video feed in VR -->
     <a-assets>
-      <video id="videoTexture" autoplay playsinline muted></video>
+      <video id="cameraFeed" autoplay playsinline muted></video>
     </a-assets>
 
-    <a-entity id="background"
-              geometry="primitive: plane; height: 2; width: 2"
-              material="shader: flat; src: #videoTexture"
-              position="0 0 -1">
+    <!-- AR.js Scene -->
+    <a-scene
+      vr-mode-ui="enabled: true"
+      embedded
+      renderer="antialias: true; alpha: true; precision: mediump;"
+      arjs="trackingMethod: best; sourceType: video; debugUIEnabled: false;"
+    >
+      <a-marker preset="hiro">
+        <a-box position="0 0.5 0" rotation="0 45 0" color="blue"></a-box>
+      </a-marker>
+    <!-- Video background plane -->
+    <a-entity id="video-plane"
+              geometry="primitive: plane; width: 4; height: 3"
+              material="shader: flat; src: #cameraFeed;"
+              position="0 0 -2">
     </a-entity>
 
-    <!-- AR marker -->
+      <a-entity camera></a-entity>
+    </a-scene>
+    <!-- Marker -->
     <a-marker preset="hiro">
-      <a-box position="0 0.5 0" rotation="0 45 0" color="red"></a-box>
+      <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="blue"></a-box>
     </a-marker>
 
+    <script>
+      const video = document.getElementById('cameraFeed');
+      let arSourceReady = false;
     <a-entity camera></a-entity>
   </a-scene>
 
+      // Start webcam manually
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+          video.srcObject = stream;
+          video.play();
   <script>
-    const videoFeed = document.getElementById('cameraFeed');
-    const textureVideo = document.getElementById('videoTexture');
+    const video = document.getElementById('cameraFeed');
+    const scene = document.querySelector('a-scene');
 
-    // 🧠 Step 1: Request the camera manually
+          // Attach the feed to AR.js manually
+          const arScene = document.querySelector('a-scene');
+          arScene.addEventListener('loaded', () => {
+            const arSystem = arScene.systems["arjs"];
+            if (arSystem && arSystem.arToolkitSource) {
+              arSystem.arToolkitSource.domElement = video;
+              arSystem.arToolkitSource.ready = true;
+              console.log("✅ AR.js video source attached manually.");
+            }
+          });
+        })
+        .catch(err => console.error("Camera error:", err));
+    // Start camera manually (single permission request)
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       .then(stream => {
-        console.log("✅ Camera stream acquired");
-        videoFeed.srcObject = stream;
-        textureVideo.srcObject = stream;
-        return new Promise(res => {
-          textureVideo.onloadedmetadata = () => {
-            textureVideo.play();
-            res();
-          };
-        });
-      })
-      .then(() => {
-        // 🧩 Step 2: Replace AR.js internal source with our manual feed
-        const arSystem = document.querySelector('a-scene').systems['arjs'];
-        if (arSystem && arSystem.arToolkitSource) {
-          arSystem.arToolkitSource.domElement = videoFeed; // override
-          arSystem.arToolkitSource.ready = true;
-          console.log("🔁 Replaced AR.js video source with manual stream");
-        }
+        video.srcObject = stream;
+        video.play();
+        console.log("🎥 Camera feed started.");
 
-        // Fit background plane aspect ratio
-        const aspect = textureVideo.videoWidth / textureVideo.videoHeight;
-        document.getElementById('background').setAttribute('geometry', {
-          primitive: 'plane',
-          height: 2,
-          width: 2 * aspect
+      // Enable XR / VR after AR.js ready
+      const scene = document.querySelector('a-scene');
+      scene.addEventListener('loaded', () => {
+        if (scene.renderer && scene.renderer.xr) {
+          scene.renderer.xr.enabled = true;
+          console.log("✅ WebXR ready (AR + VR hybrid).");
+        }
+      });
+    </script>
+  </body>
+        // Wait for AR.js to initialize, then hook up video source
+        scene.addEventListener('loaded', () => {
+          const arSystem = scene.systems["arjs"];
+          if (arSystem && arSystem.arToolkitSource) {
+            arSystem.arToolkitSource.domElement = video;
+            arSystem.arToolkitSource.ready = true;
+            console.log("✅ ARToolkit video source set.");
+          }
+
+          // Enable VR rendering
+          if (scene.renderer && scene.renderer.xr) {
+            scene.renderer.xr.enabled = true;
+            console.log("✅ WebXR ready (VR passthrough).");
+          }
         });
       })
-      .catch(err => console.error("🚫 Camera access error:", err));
+      .catch(err => console.error("Camera error:", err));
   </script>
 </body>
 </html>
