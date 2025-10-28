@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Persistent AR.js Hiro Cube</title>
+  <title>AR.js Stable Hiro</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
@@ -15,37 +15,11 @@
     vr-mode-ui="enabled: false"
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true; smooth: true; smoothCount: 10; minConfidence: 0.5;">
     
-    <!-- Marker entity -->
-    <a-marker preset="hiro" id="marker">
-      <a-entity id="cube-wrapper">
-        <a-box id="cube" position="0 0.6 0" rotation="0 45 0" scale="0.6 0.6 0.6" color="red"></a-box>
-      </a-entity>
+    <a-marker preset="hiro">
+      <a-box position="0 0.6 0" rotation="0 45 0" scale="0.6 0.6 0.6" color="red"></a-box>
     </a-marker>
 
     <a-entity camera></a-entity>
   </a-scene>
-
-  <script>
-    const marker = document.querySelector("#marker");
-    const cube = document.querySelector("#cube");
-
-    let lastVisible = true;
-
-    // Continuously check marker visibility
-    marker.addEventListener("markerFound", () => {
-      lastVisible = true;
-      cube.object3D.visible = true;
-    });
-
-    marker.addEventListener("markerLost", () => {
-      // Instead of hiding immediately, keep it visible for 1 second
-      lastVisible = false;
-      setTimeout(() => {
-        if (!lastVisible) {
-          cube.object3D.visible = true; // keep cube visible even if marker lost
-        }
-      }, 1000);
-    });
-  </script>
 </body>
 </html>
