@@ -2,29 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AR Cube Stable with Manual Camera</title>
+  <title>Stable AR Cube</title>
+  <!-- A-Frame core -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <!-- AR.js for A-Frame -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
     html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
-    #start-btn {
-      position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
-      padding:20px 40px; font-size:20px; background:#00FF00; color:black; border:none; border-radius:8px; z-index:10;
-    }
   </style>
 </head>
 <body>
 
-<button id="start-btn">Start AR</button>
-
-<!-- Hidden video for manual camera feed -->
-<video id="ar-video" autoplay playsinline style="display:none"></video>
-
-<a-scene id="ar-scene" embedded vr-mode-ui="enabled: false" arjs="sourceType: video; debugUIEnabled: false;">
-
+<!-- A-Frame Scene -->
+<a-scene embedded
+         vr-mode-ui="enabled: false"
+         arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+  
   <!-- Hiro marker with cube -->
   <a-marker preset="hiro">
-    <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red"></a-box>
+    <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red">
+      <!-- Optional animation -->
+      <a-animation attribute="rotation" to="0 405 0" dur="3000" repeat="indefinite"></a-animation>
+    </a-box>
   </a-marker>
 
   <!-- Camera -->
@@ -35,31 +34,6 @@
   <a-entity light="type: directional; intensity: 0.5" position="0 1 1"></a-entity>
 
 </a-scene>
-
-<script>
-  const btn = document.getElementById('start-btn');
-  const video = document.getElementById('ar-video');
-  const scene = document.getElementById('ar-scene');
-
-  btn.addEventListener('click', async () => {
-    try {
-      // Request camera manually
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      video.srcObject = stream;
-
-      // Wait for video to load metadata
-      await new Promise(resolve => video.onloadedmetadata = resolve);
-
-      // Tell AR.js to use this video as source
-      scene.setAttribute('arjs', 'sourceType: video; source: #ar-video');
-
-      btn.style.display = 'none';
-    } catch(e) {
-      alert('Camera access denied or unavailable.');
-      console.error(e);
-    }
-  });
-</script>
 
 </body>
 </html>
