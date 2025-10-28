@@ -2,83 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>VR Split Screen with Battle HUD</title>
+  <title>Mobile AR Battle HUD</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
     html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
-    #cameraFeed {
-      position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0;
-    }
-
-    /* Split screen for VR */
-    .eye {
-      position:absolute; top:0; width:50%; height:100%; overflow:hidden; z-index:1;
-    }
-    #left-eye { left:0; }
-    #right-eye { right:0; }
-
-    /* Battle HUD overlay, always on top */
-    #hud {
-      position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:2;
-      font-family: monospace; color:#00FF00;
-    }
-    #top-bar { position:absolute; top:10px; left:10px; right:10px; font-size:18px; display:flex; justify-content:space-between; }
-    #target-box {
-      position:absolute; top:50%; left:50%; width:200px; height:200px; margin-left:-100px; margin-top:-100px;
-      border:2px solid #00FF00; box-sizing:border-box;
-    }
-    .corner { position:absolute; width:20px; height:20px; border:2px solid #00FF00; }
-    .tl { top:0; left:0; border-right:none; border-bottom:none; }
-    .tr { top:0; right:0; border-left:none; border-bottom:none; }
-    .bl { bottom:0; left:0; border-right:none; border-top:none; }
-    .br { bottom:0; right:0; border-left:none; border-top:none; }
+    /* Optional: make cursor invisible for cleaner HUD */
+    canvas { touch-action: none; }
   </style>
 </head>
 <body>
 
-  <!-- Camera feed -->
-  <video id="cameraFeed" autoplay playsinline></video>
+<a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true;">
 
-  <!-- Left eye -->
-  <div class="eye" id="left-eye">
-    <a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true;">
-      <a-marker preset="hiro">
-        <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red"></a-box>
-      </a-marker>
-      <a-entity camera></a-entity>
-    </a-scene>
-  </div>
+  <!-- Hiro marker with cube -->
+  <a-marker preset="hiro">
+    <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red"></a-box>
+  </a-marker>
 
-  <!-- Right eye -->
-  <div class="eye" id="right-eye">
-    <a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: true;">
-      <a-marker preset="hiro">
-        <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red"></a-box>
-      </a-marker>
-      <a-entity camera></a-entity>
-    </a-scene>
-  </div>
+  <!-- Camera with always-on HUD -->
+  <a-entity camera>
+    <!-- Top info bar -->
+    <a-text value="User: tester | Targeting System: ON" color="#00FF00" width="3" position="0 1.5 -2"></a-text>
 
-  <!-- Always-on Battle HUD -->
-  <div id="hud">
-    <div id="top-bar">
-      <div>User: tester</div>
-      <div>Targeting System: ON</div>
-    </div>
-    <div id="target-box">
-      <div class="corner tl"></div>
-      <div class="corner tr"></div>
-      <div class="corner bl"></div>
-      <div class="corner br"></div>
-    </div>
-  </div>
+    <!-- Center target box -->
+    <a-plane width="0.5" height="0.5" color="transparent" material="shader: flat; wireframe: true; color: #00FF00" position="0 1 -2"></a-plane>
 
-  <script>
-    const video = document.getElementById('cameraFeed');
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      .then(stream => { video.srcObject = stream; })
-      .catch(err => console.error('Camera error:', err));
-  </script>
+    <!-- Scanning line -->
+    <a-plane width="0.02" height="0.5" color="#00FF00" position="0 1 -1.99">
+      <a-animation attribute="position" to="0 1 -2.01" dur="1000" direction="alternate" repeat="indefinite"></a-animation>
+    </a-plane>
+  </a-entity>
+
+  <a-entity light="type: ambient; intensity: 0.5"></a-entity>
+  <a-entity light="type: directional; intensity: 0.5" position="0 1 1"></a-entity>
+
+</a-scene>
+
 </body>
 </html>
