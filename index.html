@@ -1,54 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Stable AR.js Cube</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual Video + AR.js Marker</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
     html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
-    #start-btn {
-      position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
-      padding:20px 40px; font-size:20px; background:#00FF00; color:black; border:none; border-radius:8px; z-index:10;
+    #cameraFeed {
+      position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;
+      z-index:0;
+    }
+    a-scene {
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      z-index:1; pointer-events:none;
     }
   </style>
 </head>
 <body>
+  <!-- Manual video feed (always stable) -->
+  <video id="cameraFeed" autoplay playsinline muted></video>
 
-<button id="start-btn">Start AR</button>
+  <!-- AR.js scene for marker detection -->
+  <a-scene embedded vr-mode-ui="enabled: false" 
+           arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: false;">
+    
+    <!-- Hiro marker + cube -->
+    <a-marker preset="hiro">
+      <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="red">
+        <a-animation attribute="rotation" to="0 405 0" dur="3000" repeat="indefinite"></a-animation>
+      </a-box>
+    </a-marker>
 
-<!-- Scene is visible from the start -->
-<a-scene embedded
-         vr-mode-ui="enabled: false"
-         arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; autoStart: false;">
-  
-  <!-- Hiro marker + cube -->
-  <a-marker preset="hiro">
-    <a-box position="0 0.25 0" rotation="0 45 0" scale="0.2 0.2 0.2" color="red">
-      <a-animation attribute="rotation" to="0 405 0" dur="3000" repeat="indefinite"></a-animation>
-    </a-box>
-  </a-marker>
+    <a-entity camera></a-entity>
+  </a-scene>
 
-  <a-entity camera></a-entity>
-  <a-entity light="type: ambient; intensity:0.5"></a-entity>
-  <a-entity light="type: directional; intensity:0.5" position="0 1 1"></a-entity>
+  <button id="startBtn" style="
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      padding:20px 40px; font-size:20px; background:#00FF00; color:black; border:none; border-radius:8px; z-index:10;">
+    Start AR
+  </button>
 
-</a-scene>
+  <script>
+    // Manual camera feed
+    const video = document.getElementById('cameraFeed');
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => console.error('Camera error:', err));
 
-<script>
-  const btn = document.getElementById('start-btn');
-  const scene = document.querySelector('a-scene');
+    // AR.js start button
+    const btn = document.getElementById('startBtn');
+    const scene = document.querySelector('a-scene');
 
-  btn.addEventListener('click', () => {
-    // Hide button
-    btn.style.display = 'none';
-
-    // Start AR tracking properly
-    if (scene.components['arjs']) {
-      scene.components['arjs'].start(); // safe way to start AR.js after user click
-    }
-  });
-</script>
-
+    btn.addEventListener('click', () => {
+      btn.style.display = 'none';
+      if (scene.components['arjs']) {
+        scene.components['arjs'].start(); // safe start after user gesture
+      }
+    });
+  </script>
 </body>
 </html>
