@@ -1,108 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js Simulated VR</title>
-<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-<title>AR.js Double Canvas VR</title>
+<title>AR.js + Three.js Dual Eye VR</title>
+
 <style>
-html, body {
-  margin: 0; width: 100%; height: 100%; overflow: hidden; background: black;
-}
-#cameraFeed {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  object-fit: cover; z-index: 0;
-}
-.vr-container {
-  display: flex; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;
-  pointer-events: none;
-}
-.vr-eye {
-  width: 50%; height: 100%; overflow: hidden; position: relative;
-}
-.vr-eye.left canvas {
-  transform: scaleX(-1);
-}
-a-scene {
-  position: absolute; top: 0; left: 0; width: 200%; height: 100%; pointer-events: none; z-index: 1;
-}
-  html, body { margin:0; width:100%; height:100%; overflow:hidden; background:black; }
-  .vr-container { display:flex; width:100%; height:100%; }
-  .vr-eye { width:50%; height:100%; overflow:hidden; position:relative; }
-  .vr-eye canvas { width:100%; height:100%; }
+  html, body {
+    margin: 0; width: 100%; height: 100%;
+    overflow: hidden; background: black;
+  }
+  #cameraFeed {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .vr-container {
+    display: flex;
+    width: 100%; height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .vr-eye {
+    width: 50%; height: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  canvas {
+    width: 100%; height: 100%;
+    display: block;
+  }
 </style>
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/build/ar-threex.js"></script>
 </head>
 <body>
 
 <video id="cameraFeed" autoplay playsinline muted></video>
 
 <div class="vr-container">
-  <div class="vr-eye left"></div>
-  <div class="vr-eye right"></div>
-  <div class="vr-eye left">
-    <canvas id="leftEye"></canvas>
-  </div>
-  <div class="vr-eye right">
-    <canvas id="rightEye"></canvas>
-  </div>
+  <div class="vr-eye"><canvas id="leftEye"></canvas></div>
+  <div class="vr-eye"><canvas id="rightEye"></canvas></div>
 </div>
 
-<a-scene embedded vr-mode-ui="enabled: false"
-         arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
-  <a-marker preset="hiro">
-    <a-box position="0 0.5 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="red">
-      <a-animation attribute="rotation" to="0 405 0" dur="3000" repeat="indefinite"></a-animation>
-    </a-box>
-  </a-marker>
-  <a-entity camera></a-entity>
-</a-scene>
-<video id="cameraFeed" autoplay playsinline muted style="display:none"></video>
-
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/build/ar-threex.js"></script>
-<script src="https://threejs.org/build/three.min.js"></script>
 <script>
-const video = document.getElementById('cameraFeed');
-navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-  .then(stream => video.srcObject = stream)
-  .catch(err => console.error('Camera error:', err));
-</script>
-(async function() {
+(async function () {
+  // Camera feed
   const video = document.getElementById('cameraFeed');
-  const leftCanvas = document.getElementById('leftEye');
-  const rightCanvas = document.getElementById('rightEye');
-  const leftCtx = leftCanvas.getContext('2d');
-  const rightCtx = rightCanvas.getContext('2d');
-
-  // Get camera feed
-  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }});
+  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
   video.srcObject = stream;
   await video.play();
 
-  // Resize canvases to match video
-  leftCanvas.width = rightCanvas.width = video.videoWidth;
-  leftCanvas.height = rightCanvas.height = video.videoHeight;
+  // Setup for each eye
+  const setupEye = (canvas) => {
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+    renderer.setSize(window.innerWidth / 2, window.innerHeight);
+    renderer.setClearColor(0x000000, 0);
 
-  // Dummy AR overlay for example (replace with actual AR.js render)
-  function drawAR(ctx) {
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 5;
-    ctx.strokeRect(ctx.canvas.width/2 -50, ctx.canvas.height/2 -50, 100, 100);
-  }
+    const scene = new THREE.Scene();
 
-  // Render loop
-  function render() {
-    // Draw video to both canvases
-    leftCtx.drawImage(video, 0, 0, leftCanvas.width, leftCanvas.height);
-    rightCtx.drawImage(video, 0, 0, rightCanvas.width, rightCanvas.height);
+    // AR.js source and context
+    const arSource = new THREEx.ArToolkitSource({ sourceType: 'webcam', sourceWidth: 640, sourceHeight: 480 });
+    arSource.init(() => setTimeout(() => arContext.arController && arSource.onResizeElement(), 200));
 
-    // Draw AR overlay
-    drawAR(leftCtx);
-    drawAR(rightCtx);
+    const arContext = new THREEx.ArToolkitContext({
+      cameraParametersUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/camera_para.dat',
+      detectionMode: 'mono'
+    });
 
-    requestAnimationFrame(render);
-  }
-  render();
+    arContext.init(() => {
+      camera.projectionMatrix.copy(arContext.getProjectionMatrix());
+    });
+
+    const camera = new THREE.Camera();
+    scene.add(camera);
+
+    // Marker
+    const markerRoot = new THREE.Group();
+    scene.add(markerRoot);
+    const markerControls = new THREEx.ArMarkerControls(arContext, markerRoot, {
+      type: 'pattern',
+      patternUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/patt.hiro',
+    });
+
+    // Rotating cube
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshNormalMaterial();
+    const cube = new THREE.Mesh(geometry, material);
+    cube.position.y = 0.5;
+    markerRoot.add(cube);
+
+    // Render loop
+    const clock = new THREE.Clock();
+    function render() {
+      const delta = clock.getDelta();
+      if (arSource.ready) arContext.update(arSource.domElement);
+
+      cube.rotation.y += delta * 2; // rotate
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render);
+    }
+    render();
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth / 2, window.innerHeight);
+    });
+  };
+
+  // Initialize left and right eyes
+  setupEye(document.getElementById('leftEye'));
+  setupEye(document.getElementById('rightEye'));
 })();
 </script>
+
 </body>
 </html>
