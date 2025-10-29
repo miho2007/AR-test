@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js Target VR with Camera</title>
+<title>AR.js Target VR Responsive</title>
 <style>
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: black; }
 #cameraFeed { display: none; }
@@ -71,7 +71,7 @@ canvas { width: 100%; height: 100%; display: block; }
     patternUrl: './patt.hiro'
   });
 
-  // 🔹 Video background
+  // Video background
   const videoTexture = new THREE.VideoTexture(video);
   videoTexture.minFilter = THREE.LinearFilter;
   videoTexture.magFilter = THREE.LinearFilter;
@@ -83,7 +83,7 @@ canvas { width: 100%; height: 100%; display: block; }
   backgroundPlane.position.z = -5;
   scene.add(backgroundPlane);
 
-  // 🔹 Target
+  // Target (ring)
   const targetGroup = new THREE.Group();
   const colors = [0xff0000, 0xffffff, 0xff0000, 0xffffff];
   for (let i = 0; i < colors.length; i++) {
@@ -99,16 +99,16 @@ canvas { width: 100%; height: 100%; display: block; }
   markerRoot.add(targetGroup);
 
   const clock = new THREE.Clock();
-
   const leftCanvas = document.getElementById('leftEye');
   const rightCanvas = document.getElementById('rightEye');
-  const leftCtx = leftCanvas.getContext('2d');
-  const rightCtx = rightCanvas.getContext('2d');
+  const leftCtx = leftCanvas.getContext('2d', { willReadFrequently: true });
+  const rightCtx = rightCanvas.getContext('2d', { willReadFrequently: true });
 
   function render() {
     const delta = clock.getDelta();
     if (arSource.ready) arContext.update(arSource.domElement);
 
+    // Smooth rotation for stability
     targetGroup.rotation.y += delta * 1.5;
 
     mainRenderer.render(scene, camera);
@@ -122,12 +122,17 @@ canvas { width: 100%; height: 100%; display: block; }
 
   function onResize() {
     arSource.onResizeElement();
-    leftCanvas.width = rightCanvas.width = window.innerWidth / 2;
-    leftCanvas.height = rightCanvas.height = window.innerHeight;
+
+    const w = window.innerWidth / 2;
+    const h = window.innerHeight;
+    leftCanvas.width = rightCanvas.width = w;
+    leftCanvas.height = rightCanvas.height = h;
+
+    // Adjust WebGL renderer size for stable AR projection
+    mainRenderer.setSize(window.innerWidth, window.innerHeight);
   }
   window.addEventListener('resize', onResize);
   onResize();
-
 })();
 </script>
 </body>
