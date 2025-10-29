@@ -51,7 +51,7 @@ canvas { width: 100%; height: 100%; display: block; }
 
   // 🔹 AR.js context (correct camera_para.dat URL)
   const arContext = new THREEx.ArToolkitContext({
-    cameraParametersUrl: 'https://rawcdn.githack.com/AR-js-org/AR.js/3.3.2/three.js/data/data/camera_para.dat',
+    cameraParametersUrl: './camera_para.dat',
     detectionMode: 'mono'
   });
   await new Promise(res => arContext.init(res));
