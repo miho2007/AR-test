@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js Target VR Responsive</title>
+<title>AR.js Stereoscopic VR</title>
 <style>
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: black; }
 #cameraFeed { display: none; }
@@ -31,6 +31,7 @@ canvas { width: 100%; height: 100%; display: block; }
   const video = document.getElementById('cameraFeed');
   let stream;
 
+  // Start camera
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
   } catch(e) {
@@ -64,6 +65,7 @@ canvas { width: 100%; height: 100%; display: block; }
   scene.add(camera);
   if (arContext.arController) camera.projectionMatrix.copy(arContext.getProjectionMatrix());
 
+  // AR marker
   const markerRoot = new THREE.Group();
   scene.add(markerRoot);
   new THREEx.ArMarkerControls(arContext, markerRoot, {
@@ -71,12 +73,11 @@ canvas { width: 100%; height: 100%; display: block; }
     patternUrl: './patt.hiro'
   });
 
-  // Video background
+  // Video background plane
   const videoTexture = new THREE.VideoTexture(video);
   videoTexture.minFilter = THREE.LinearFilter;
   videoTexture.magFilter = THREE.LinearFilter;
   videoTexture.format = THREE.RGBFormat;
-
   const planeGeometry = new THREE.PlaneGeometry(16, 9);
   const planeMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
   const backgroundPlane = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -104,35 +105,42 @@ canvas { width: 100%; height: 100%; display: block; }
   const leftCtx = leftCanvas.getContext('2d', { willReadFrequently: true });
   const rightCtx = rightCanvas.getContext('2d', { willReadFrequently: true });
 
+  // Render loop with stereo offset
   function render() {
     const delta = clock.getDelta();
     if (arSource.ready) arContext.update(arSource.domElement);
 
-    // Smooth rotation for stability
+    // Smooth rotation
     targetGroup.rotation.y += delta * 1.5;
 
     mainRenderer.render(scene, camera);
 
-    leftCtx.drawImage(mainCanvas, 0, 0, leftCanvas.width, leftCanvas.height);
-    rightCtx.drawImage(mainCanvas, 0, 0, rightCanvas.width, rightCanvas.height);
+    const offset = 40; // pixels for stereo convergence
+    const w = leftCanvas.width;
+    const h = leftCanvas.height;
+
+    leftCtx.clearRect(0, 0, w, h);
+    leftCtx.drawImage(mainCanvas, -offset, 0, mainCanvas.width, mainCanvas.height);
+
+    rightCtx.clearRect(0, 0, w, h);
+    rightCtx.drawImage(mainCanvas, offset, 0, mainCanvas.width, mainCanvas.height);
 
     requestAnimationFrame(render);
   }
   render();
 
+  // Responsive resize
   function onResize() {
     arSource.onResizeElement();
-
     const w = window.innerWidth / 2;
     const h = window.innerHeight;
     leftCanvas.width = rightCanvas.width = w;
     leftCanvas.height = rightCanvas.height = h;
-
-    // Adjust WebGL renderer size for stable AR projection
     mainRenderer.setSize(window.innerWidth, window.innerHeight);
   }
   window.addEventListener('resize', onResize);
   onResize();
+
 })();
 </script>
 </body>
