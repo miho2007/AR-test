@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js + Three.js Dual Eye VR (Tuned)</title>
+<title>AR.js + Three.js Dual Eye VR (Fixed)</title>
+
 <style>
   html, body {
     margin: 0; width: 100%; height: 100%;
@@ -15,16 +16,25 @@
     object-fit: cover; z-index: 0;
   }
   .vr-container {
-    display: flex; width: 100%; height: 100%;
-    position: absolute; top: 0; left: 0; z-index: 1;
+    display: flex;
+    width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0;
+    z-index: 1;
   }
   .vr-eye {
-    width: 50%; height: 100%; overflow: hidden;
+    width: 50%; height: 100%;
+    overflow: hidden;
   }
   canvas { width: 100%; height: 100%; display: block; }
 </style>
+
+<!-- ✅ Correct Load Order -->
+<script>
+  window.THREE = window.THREE || {};
+</script>
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/build/ar-threex.js"></script>
+
 </head>
 <body>
 
@@ -37,24 +47,25 @@
 
 <script>
 (async function() {
-  // Get video feed
+  // 🎥 Camera feed
   const video = document.getElementById('cameraFeed');
   const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
   video.srcObject = stream;
   await video.play();
 
-  // AR.js source (shared by both eyes)
+  // 🧩 Shared AR.js Source
   const arSource = new THREEx.ArToolkitSource({ sourceType: 'webcam' });
   arSource.domElement = video;
   arSource.init(() => onResize());
 
-  // Shared AR context
+  // 🧠 Shared AR.js Context
   const arContext = new THREEx.ArToolkitContext({
     cameraParametersUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/camera_para.dat',
     detectionMode: 'mono'
   });
   await new Promise(res => arContext.init(res));
 
+  // 🧱 Eye setup (each canvas gets its own scene + renderer)
   function setupEye(canvas) {
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth / 2, window.innerHeight);
@@ -64,33 +75,37 @@
 
     const camera = new THREE.Camera();
     scene.add(camera);
-    arContext.arController && camera.projectionMatrix.copy(arContext.getProjectionMatrix());
 
-    // Marker root
+    // 🔹 Apply projection matrix
+    if (arContext.arController) {
+      camera.projectionMatrix.copy(arContext.getProjectionMatrix());
+    }
+
+    // 🧭 Marker root
     const markerRoot = new THREE.Group();
     scene.add(markerRoot);
+
     const markerControls = new THREEx.ArMarkerControls(arContext, markerRoot, {
       type: 'pattern',
       patternUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/patt.hiro'
     });
 
-    // Cube (centered correctly)
+    // 🔶 Cube setup
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const material = new THREE.MeshNormalMaterial();
     const cube = new THREE.Mesh(geometry, material);
-    cube.position.set(0, 0.5, 0); // sits on top of marker plane
+    cube.position.set(0, 0.5, 0); // sits neatly on marker
     markerRoot.add(cube);
 
-    // Small lighting improvement
-    const light = new THREE.DirectionalLight(0xffffff, 0.8);
-    light.position.set(1, 1, 1);
+    // 💡 Basic lighting
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(1, 2, 2);
     scene.add(light);
 
-    // Render loop
+    // 🌀 Animation loop
     const clock = new THREE.Clock();
     function render() {
       const delta = clock.getDelta();
-
       if (arSource.ready) {
         arContext.update(arSource.domElement);
         camera.visible = camera.visible && markerRoot.visible;
@@ -105,11 +120,11 @@
     return renderer;
   }
 
-  // Setup both eyes
+  // 👁️ Initialize both eyes
   const leftRenderer = setupEye(document.getElementById('leftEye'));
   const rightRenderer = setupEye(document.getElementById('rightEye'));
 
-  // Handle window resize
+  // 🪟 Handle window resizing
   function onResize() {
     arSource.onResizeElement();
     arSource.copyElementSizeTo(leftRenderer.domElement);
@@ -118,5 +133,6 @@
   window.addEventListener('resize', onResize);
 })();
 </script>
+
 </body>
 </html>
