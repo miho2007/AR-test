@@ -3,21 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js Dual Eye VR Working</title>
+<title>AR.js Dual Eye VR GitHub Pages</title>
 <style>
 html, body {
   margin: 0; width: 100%; height: 100%; overflow: hidden; background: black;
 }
-.vr-container { display: flex; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+.vr-container {
+  display: flex; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;
+}
 .vr-eye { width: 50%; height: 100%; overflow: hidden; }
 canvas { width: 100%; height: 100%; display: block; }
 </style>
 
-<!-- ✅ Load correct versions -->
+<!-- Load compatible Three.js and AR.js versions -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/build/ar-threex.js"></script>
 </head>
 <body>
+
 <video id="cameraFeed" autoplay playsinline muted></video>
 
 <div class="vr-container">
@@ -27,59 +30,61 @@ canvas { width: 100%; height: 100%; display: block; }
 
 <script>
 function waitForARJS(callback) {
-  if (window.THREEx && THREEx.ArToolkitSource) {
-    callback();
-  } else {
-    setTimeout(() => waitForARJS(callback), 100);
-  }
+  if (window.THREEx && THREEx.ArToolkitSource) callback();
+  else setTimeout(() => waitForARJS(callback), 100);
 }
 
 waitForARJS(async function() {
-  // 🎥 Camera feed
   const video = document.getElementById('cameraFeed');
-  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-  video.srcObject = stream;
-  await video.play();
 
-  // 🧩 Shared AR.js source
+  // 🔹 Start camera safely
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    console.log("Camera started successfully");
+  } catch(err) {
+    console.error("Camera failed:", err);
+    alert("Camera access is required for AR to work!");
+    return;
+  }
+
+  // 🔹 AR.js source
   const arSource = new THREEx.ArToolkitSource({ sourceType: 'webcam' });
   arSource.domElement = video;
   arSource.init(() => onResize());
 
-  // 🧠 Shared AR context
+  // 🔹 AR.js context
   const arContext = new THREEx.ArToolkitContext({
     cameraParametersUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/data/data/camera_para.dat',
     detectionMode: 'mono'
   });
   await new Promise(res => arContext.init(res));
 
-  // 🧱 Function to setup each eye
+  // 🔹 Eye setup function
   function setupEye(canvas) {
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth / 2, window.innerHeight);
     renderer.setClearColor(0x000000, 0);
 
     const scene = new THREE.Scene();
-
     const camera = new THREE.Camera();
     scene.add(camera);
     if (arContext.arController) camera.projectionMatrix.copy(arContext.getProjectionMatrix());
 
     const markerRoot = new THREE.Group();
     scene.add(markerRoot);
-
     new THREEx.ArMarkerControls(arContext, markerRoot, {
       type: 'pattern',
       patternUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/data/data/patt.hiro'
     });
 
-    const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial());
-    cube.position.set(0, 0.5, 0);
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshNormalMaterial());
+    cube.position.set(0,0.5,0);
     markerRoot.add(cube);
 
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(1, 2, 2);
-    scene.add(light);
+    scene.add(new THREE.DirectionalLight(0xffffff,1));
 
     const clock = new THREE.Clock();
     function render() {
@@ -94,11 +99,9 @@ waitForARJS(async function() {
     return renderer;
   }
 
-  // Initialize both eyes
   const leftRenderer = setupEye(document.getElementById('leftEye'));
   const rightRenderer = setupEye(document.getElementById('rightEye'));
 
-  // Handle resize
   function onResize() {
     arSource.onResizeElement();
     arSource.copyElementSizeTo(leftRenderer.domElement);
@@ -107,5 +110,6 @@ waitForARJS(async function() {
   window.addEventListener('resize', onResize);
 });
 </script>
+
 </body>
 </html>
