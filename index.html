@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js + Three.js Dual Eye VR</title>
-
+<title>AR.js + Three.js Dual Eye VR (Tuned)</title>
 <style>
   html, body {
     margin: 0; width: 100%; height: 100%;
@@ -13,28 +12,17 @@
   #cameraFeed {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    object-fit: cover;
-    z-index: 0;
+    object-fit: cover; z-index: 0;
   }
   .vr-container {
-    display: flex;
-    width: 100%; height: 100%;
-    position: absolute;
-    top: 0; left: 0;
-    z-index: 1;
-    pointer-events: none;
+    display: flex; width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0; z-index: 1;
   }
   .vr-eye {
-    width: 50%; height: 100%;
-    overflow: hidden;
-    position: relative;
+    width: 50%; height: 100%; overflow: hidden;
   }
-  canvas {
-    width: 100%; height: 100%;
-    display: block;
-  }
+  canvas { width: 100%; height: 100%; display: block; }
 </style>
-
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/build/ar-threex.js"></script>
 </head>
@@ -48,75 +36,87 @@
 </div>
 
 <script>
-(async function () {
-  // Camera feed
+(async function() {
+  // Get video feed
   const video = document.getElementById('cameraFeed');
   const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
   video.srcObject = stream;
   await video.play();
 
-  // Setup for each eye
-  const setupEye = (canvas) => {
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+  // AR.js source (shared by both eyes)
+  const arSource = new THREEx.ArToolkitSource({ sourceType: 'webcam' });
+  arSource.domElement = video;
+  arSource.init(() => onResize());
+
+  // Shared AR context
+  const arContext = new THREEx.ArToolkitContext({
+    cameraParametersUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/camera_para.dat',
+    detectionMode: 'mono'
+  });
+  await new Promise(res => arContext.init(res));
+
+  function setupEye(canvas) {
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth / 2, window.innerHeight);
     renderer.setClearColor(0x000000, 0);
 
     const scene = new THREE.Scene();
 
-    // AR.js source and context
-    const arSource = new THREEx.ArToolkitSource({ sourceType: 'webcam', sourceWidth: 640, sourceHeight: 480 });
-    arSource.init(() => setTimeout(() => arContext.arController && arSource.onResizeElement(), 200));
-
-    const arContext = new THREEx.ArToolkitContext({
-      cameraParametersUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/camera_para.dat',
-      detectionMode: 'mono'
-    });
-
-    arContext.init(() => {
-      camera.projectionMatrix.copy(arContext.getProjectionMatrix());
-    });
-
     const camera = new THREE.Camera();
     scene.add(camera);
+    arContext.arController && camera.projectionMatrix.copy(arContext.getProjectionMatrix());
 
-    // Marker
+    // Marker root
     const markerRoot = new THREE.Group();
     scene.add(markerRoot);
     const markerControls = new THREEx.ArMarkerControls(arContext, markerRoot, {
       type: 'pattern',
-      patternUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/patt.hiro',
+      patternUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/patt.hiro'
     });
 
-    // Rotating cube
+    // Cube (centered correctly)
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const material = new THREE.MeshNormalMaterial();
     const cube = new THREE.Mesh(geometry, material);
-    cube.position.y = 0.5;
+    cube.position.set(0, 0.5, 0); // sits on top of marker plane
     markerRoot.add(cube);
+
+    // Small lighting improvement
+    const light = new THREE.DirectionalLight(0xffffff, 0.8);
+    light.position.set(1, 1, 1);
+    scene.add(light);
 
     // Render loop
     const clock = new THREE.Clock();
     function render() {
       const delta = clock.getDelta();
-      if (arSource.ready) arContext.update(arSource.domElement);
 
-      cube.rotation.y += delta * 2; // rotate
+      if (arSource.ready) {
+        arContext.update(arSource.domElement);
+        camera.visible = camera.visible && markerRoot.visible;
+      }
 
+      cube.rotation.y += delta * 1.5;
       renderer.render(scene, camera);
       requestAnimationFrame(render);
     }
     render();
 
-    window.addEventListener('resize', () => {
-      renderer.setSize(window.innerWidth / 2, window.innerHeight);
-    });
-  };
+    return renderer;
+  }
 
-  // Initialize left and right eyes
-  setupEye(document.getElementById('leftEye'));
-  setupEye(document.getElementById('rightEye'));
+  // Setup both eyes
+  const leftRenderer = setupEye(document.getElementById('leftEye'));
+  const rightRenderer = setupEye(document.getElementById('rightEye'));
+
+  // Handle window resize
+  function onResize() {
+    arSource.onResizeElement();
+    arSource.copyElementSizeTo(leftRenderer.domElement);
+    arSource.copyElementSizeTo(rightRenderer.domElement);
+  }
+  window.addEventListener('resize', onResize);
 })();
 </script>
-
 </body>
 </html>
