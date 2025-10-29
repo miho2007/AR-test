@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js + Three.js Dual Eye VR (Fixed)</title>
+<title>AR.js + Three.js Dual Eye VR (Compatible Versions)</title>
 
 <style>
   html, body {
@@ -21,19 +21,13 @@
     position: absolute; top: 0; left: 0;
     z-index: 1;
   }
-  .vr-eye {
-    width: 50%; height: 100%;
-    overflow: hidden;
-  }
+  .vr-eye { width: 50%; height: 100%; overflow: hidden; }
   canvas { width: 100%; height: 100%; display: block; }
 </style>
 
-<!-- ✅ Correct Load Order -->
-<script>
-  window.THREE = window.THREE || {};
-</script>
-<script src="https://threejs.org/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/build/ar-threex.js"></script>
+<!-- ✅ Correct versions -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/build/ar-threex.js"></script>
 
 </head>
 <body>
@@ -53,19 +47,19 @@
   video.srcObject = stream;
   await video.play();
 
-  // 🧩 Shared AR.js Source
+  // 🧩 Shared AR source
   const arSource = new THREEx.ArToolkitSource({ sourceType: 'webcam' });
   arSource.domElement = video;
   arSource.init(() => onResize());
 
-  // 🧠 Shared AR.js Context
+  // 🧠 Shared AR context
   const arContext = new THREEx.ArToolkitContext({
-    cameraParametersUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/camera_para.dat',
+    cameraParametersUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/data/data/camera_para.dat',
     detectionMode: 'mono'
   });
   await new Promise(res => arContext.init(res));
 
-  // 🧱 Eye setup (each canvas gets its own scene + renderer)
+  // 🧱 Eye setup
   function setupEye(canvas) {
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth / 2, window.innerHeight);
@@ -75,34 +69,27 @@
 
     const camera = new THREE.Camera();
     scene.add(camera);
-
-    // 🔹 Apply projection matrix
     if (arContext.arController) {
       camera.projectionMatrix.copy(arContext.getProjectionMatrix());
     }
 
-    // 🧭 Marker root
     const markerRoot = new THREE.Group();
     scene.add(markerRoot);
-
-    const markerControls = new THREEx.ArMarkerControls(arContext, markerRoot, {
+    new THREEx.ArMarkerControls(arContext, markerRoot, {
       type: 'pattern',
-      patternUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/data/patt.hiro'
+      patternUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/data/data/patt.hiro'
     });
 
-    // 🔶 Cube setup
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const material = new THREE.MeshNormalMaterial();
     const cube = new THREE.Mesh(geometry, material);
-    cube.position.set(0, 0.5, 0); // sits neatly on marker
+    cube.position.set(0, 0.5, 0);
     markerRoot.add(cube);
 
-    // 💡 Basic lighting
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(1, 2, 2);
     scene.add(light);
 
-    // 🌀 Animation loop
     const clock = new THREE.Clock();
     function render() {
       const delta = clock.getDelta();
@@ -110,7 +97,6 @@
         arContext.update(arSource.domElement);
         camera.visible = camera.visible && markerRoot.visible;
       }
-
       cube.rotation.y += delta * 1.5;
       renderer.render(scene, camera);
       requestAnimationFrame(render);
@@ -120,11 +106,9 @@
     return renderer;
   }
 
-  // 👁️ Initialize both eyes
   const leftRenderer = setupEye(document.getElementById('leftEye'));
   const rightRenderer = setupEye(document.getElementById('rightEye'));
 
-  // 🪟 Handle window resizing
   function onResize() {
     arSource.onResizeElement();
     arSource.copyElementSizeTo(leftRenderer.domElement);
@@ -133,6 +117,5 @@
   window.addEventListener('resize', onResize);
 })();
 </script>
-
 </body>
 </html>
