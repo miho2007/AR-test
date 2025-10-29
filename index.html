@@ -3,109 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js Dual Eye VR Fully Working</title>
+<title>AR.js Single View</title>
 <style>
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: black; }
 #cameraFeed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-.vr-container { display: flex; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
-.vr-eye { width: 50%; height: 100%; overflow: hidden; }
-canvas { width: 100%; height: 100%; display: block; }
+canvas { width: 100%; height: 100%; display: block; z-index: 1; position: absolute; top: 0; left: 0; }
 </style>
 
-<!-- Three.js + AR.js -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/build/ar-threex.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js-threejs@0.3.2/dist/ar.min.js"></script>
-
 </head>
 <body>
 
 <video id="cameraFeed" autoplay playsinline muted></video>
-
-<div class="vr-container">
-  <div class="vr-eye"><canvas id="leftEye"></canvas></div>
-  <div class="vr-eye"><canvas id="rightEye"></canvas></div>
-</div>
+<canvas id="arCanvas"></canvas>
 
 <script>
 (async function() {
+  // Camera feed
   const video = document.getElementById('cameraFeed');
   let stream;
-
-  // 🔹 Try back camera first, fallback to default
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
   } catch(e) {
     console.warn("Back camera failed, using default camera:", e);
     stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
   }
-
   video.srcObject = stream;
   await video.play();
   console.log("Camera started successfully");
 
-  // 🔹 AR.js source
+  // AR.js source
   const arSource = new THREEx.ArToolkitSource({ sourceType: 'webcam' });
   arSource.domElement = video;
   arSource.init(() => onResize());
 
-  // 🔹 AR.js context (correct camera_para.dat URL)
+  // AR.js context
   const arContext = new THREEx.ArToolkitContext({
-    cameraParametersUrl: './camera_para.dat',
+    cameraParametersUrl: './camera_para.dat', // local file
     detectionMode: 'mono'
   });
   await new Promise(res => arContext.init(res));
 
-  // 🔹 Function to setup each eye
-  function setupEye(canvas) {
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setSize(window.innerWidth / 2, window.innerHeight);
-    renderer.setClearColor(0x000000, 0);
+  // Renderer and scene
+  const canvas = document.getElementById('arCanvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000, 0);
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.Camera();
-    scene.add(camera);
-    if (arContext.arController) camera.projectionMatrix.copy(arContext.getProjectionMatrix());
+  const scene = new THREE.Scene();
+  const camera = new THREE.Camera();
+  scene.add(camera);
+  if (arContext.arController) camera.projectionMatrix.copy(arContext.getProjectionMatrix());
 
-    const markerRoot = new THREE.Group();
-    scene.add(markerRoot);
-    new THREEx.ArMarkerControls(arContext, markerRoot, {
-      type: 'pattern',
-      patternUrl: './patt.hiro'
-    });
+  // Marker
+  const markerRoot = new THREE.Group();
+  scene.add(markerRoot);
+  new THREEx.ArMarkerControls(arContext, markerRoot, {
+    type: 'pattern',
+    patternUrl: './patt.hiro' // local marker
+  });
 
-    const cube = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshNormalMaterial());
-    cube.position.set(0,0.5,0);
-    markerRoot.add(cube);
+  // Cube
+  const cube = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshNormalMaterial());
+  cube.position.set(0,0.5,0);
+  markerRoot.add(cube);
 
-    const light = new THREE.DirectionalLight(0xffffff,1);
-    light.position.set(1,2,2);
-    scene.add(light);
+  // Light
+  const light = new THREE.DirectionalLight(0xffffff,1);
+  light.position.set(1,2,2);
+  scene.add(light);
 
-    const clock = new THREE.Clock();
-    function render() {
-      const delta = clock.getDelta();
-      if (arSource.ready) arContext.update(arSource.domElement);
-      cube.rotation.y += delta * 1.5;
-      renderer.render(scene, camera);
-      requestAnimationFrame(render);
-    }
-    render();
-
-    return renderer;
+  const clock = new THREE.Clock();
+  function render() {
+    const delta = clock.getDelta();
+    if (arSource.ready) arContext.update(arSource.domElement);
+    cube.rotation.y += delta * 1.5;
+    renderer.render(scene, camera);
+    requestAnimationFrame(render);
   }
+  render();
 
-  const leftRenderer = setupEye(document.getElementById('leftEye'));
-  const rightRenderer = setupEye(document.getElementById('rightEye'));
-
-  // 🔹 Resize handler
+  // Resize handler
   function onResize() {
     arSource.onResizeElement();
-    arSource.copyElementSizeTo(leftRenderer.domElement);
-    arSource.copyElementSizeTo(rightRenderer.domElement);
+    arSource.copyElementSizeTo(renderer.domElement);
   }
   window.addEventListener('resize', onResize);
-
 })();
 </script>
 </body>
