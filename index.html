@@ -3,27 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js Target Marker</title>
+<title>AR.js Target VR</title>
 <style>
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: black; }
-#cameraFeed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-canvas { width: 100%; height: 100%; display: block; z-index: 1; position: absolute; top: 0; left: 0; }
+#cameraFeed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; display: none; }
+.vr-container { display: flex; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+.vr-eye { width: 50%; height: 100%; overflow: hidden; }
+canvas { width: 100%; height: 100%; display: block; }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/build/ar-threex.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js-threejs@0.3.2/dist/ar.min.js"></script>
-
 </head>
 <body>
 
 <video id="cameraFeed" autoplay playsinline muted></video>
-<canvas id="arCanvas"></canvas>
+
+<div class="vr-container">
+  <canvas id="leftEye"></canvas>
+  <canvas id="rightEye"></canvas>
+</div>
 
 <script>
 (async function() {
   const video = document.getElementById('cameraFeed');
   let stream;
+
+  // Start camera
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
   } catch(e) {
@@ -34,20 +40,23 @@ canvas { width: 100%; height: 100%; display: block; z-index: 1; position: absolu
   await video.play();
   console.log("Camera started successfully");
 
+  // AR.js source
   const arSource = new THREEx.ArToolkitSource({ sourceType: 'webcam' });
   arSource.domElement = video;
   arSource.init(() => onResize());
 
+  // AR.js context
   const arContext = new THREEx.ArToolkitContext({
     cameraParametersUrl: './camera_para.dat',
     detectionMode: 'mono'
   });
   await new Promise(res => arContext.init(res));
 
-  const canvas = document.getElementById('arCanvas');
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x000000, 0);
+  // Hidden canvas for main rendering
+  const mainCanvas = document.createElement('canvas');
+  const mainRenderer = new THREE.WebGLRenderer({ canvas: mainCanvas, alpha: true, antialias: true });
+  mainRenderer.setSize(window.innerWidth, window.innerHeight);
+  mainRenderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
   const camera = new THREE.Camera();
@@ -61,16 +70,16 @@ canvas { width: 100%; height: 100%; display: block; z-index: 1; position: absolu
     patternUrl: './patt.hiro'
   });
 
-  // Create target (concentric rings)
+  // Target
   const targetGroup = new THREE.Group();
-  const colors = [0xff0000, 0xffffff, 0xff0000, 0xffffff]; // red/white rings
+  const colors = [0xff0000, 0xffffff, 0xff0000, 0xffffff];
   for (let i = 0; i < colors.length; i++) {
     const radiusOuter = 0.5 - i*0.1;
     const radiusInner = radiusOuter - 0.1;
     const geometry = new THREE.RingGeometry(radiusInner, radiusOuter, 32);
     const material = new THREE.MeshBasicMaterial({ color: colors[i], side: THREE.DoubleSide });
     const ring = new THREE.Mesh(geometry, material);
-    ring.rotation.x = -Math.PI/2; // face upward
+    ring.rotation.x = -Math.PI/2;
     targetGroup.add(ring);
   }
   targetGroup.position.set(0, 0.5, 0);
@@ -81,20 +90,35 @@ canvas { width: 100%; height: 100%; display: block; z-index: 1; position: absolu
   scene.add(light);
 
   const clock = new THREE.Clock();
+
+  const leftCanvas = document.getElementById('leftEye');
+  const rightCanvas = document.getElementById('rightEye');
+  const leftCtx = leftCanvas.getContext('2d');
+  const rightCtx = rightCanvas.getContext('2d');
+
   function render() {
     const delta = clock.getDelta();
     if (arSource.ready) arContext.update(arSource.domElement);
-    targetGroup.rotation.y += delta * 1.5; // slowly spin
-    renderer.render(scene, camera);
+
+    targetGroup.rotation.y += delta * 1.5;
+
+    mainRenderer.render(scene, camera);
+
+    // Copy main canvas to both eyes
+    leftCtx.drawImage(mainCanvas, 0, 0, leftCanvas.width, leftCanvas.height);
+    rightCtx.drawImage(mainCanvas, 0, 0, rightCanvas.width, rightCanvas.height);
+
     requestAnimationFrame(render);
   }
   render();
 
   function onResize() {
     arSource.onResizeElement();
-    arSource.copyElementSizeTo(renderer.domElement);
+    leftCanvas.width = rightCanvas.width = window.innerWidth / 2;
+    leftCanvas.height = rightCanvas.height = window.innerHeight;
   }
   window.addEventListener('resize', onResize);
+  onResize();
 })();
 </script>
 </body>
