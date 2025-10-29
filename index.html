@@ -71,7 +71,7 @@ canvas { width: 100%; height: 100%; display: block; }
     scene.add(markerRoot);
     new THREEx.ArMarkerControls(arContext, markerRoot, {
       type: 'pattern',
-      patternUrl: 'https://rawcdn.githack.com/AR-js-org/AR.js/3.3.2/three.js/data/data/patt.hiro'
+      patternUrl: './patt.hiro'
     });
 
     const cube = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshNormalMaterial());
