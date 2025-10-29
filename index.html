@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR.js Dual Eye VR with Camera Fix</title>
+<title>AR.js Dual Eye VR Fully Working</title>
 <style>
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: black; }
 #cameraFeed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
@@ -49,9 +49,9 @@ canvas { width: 100%; height: 100%; display: block; }
   arSource.domElement = video;
   arSource.init(() => onResize());
 
-  // 🔹 AR.js context
+  // 🔹 AR.js context (correct camera_para.dat URL)
   const arContext = new THREEx.ArToolkitContext({
-    cameraParametersUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/data/data/camera_para.dat',
+    cameraParametersUrl: 'https://rawcdn.githack.com/AR-js-org/AR.js/3.3.2/three.js/data/data/camera_para.dat',
     detectionMode: 'mono'
   });
   await new Promise(res => arContext.init(res));
@@ -71,7 +71,7 @@ canvas { width: 100%; height: 100%; display: block; }
     scene.add(markerRoot);
     new THREEx.ArMarkerControls(arContext, markerRoot, {
       type: 'pattern',
-      patternUrl: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/data/data/patt.hiro'
+      patternUrl: 'https://rawcdn.githack.com/AR-js-org/AR.js/3.3.2/three.js/data/data/patt.hiro'
     });
 
     const cube = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshNormalMaterial());
@@ -105,6 +105,7 @@ canvas { width: 100%; height: 100%; display: block; }
     arSource.copyElementSizeTo(rightRenderer.domElement);
   }
   window.addEventListener('resize', onResize);
+
 })();
 </script>
 </body>
